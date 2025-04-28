@@ -1,1 +1,50 @@
+name: Build RTL8720dn-Deauther
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Arduino CLI
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | bash
+        echo "/home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin" >> $GITHUB_PATH
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli version
+
+    - name: Add board manager URL for Ameba platform
+      run: |
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli config init
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli config set board_manager.additional_urls https://github.com/ambiot/ambd_arduino/raw/master/Arduino_package/package_realtek.com_amebad_index.json
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli config dump
+
+    - name: Install board support for RTL8720DN
+      run: |
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli core update-index
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli core install realtek:AmebaD
+
+    - name: Compile firmware
+      run: |
+        mkdir -p ./output
+        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli compile --fqbn realtek:AmebaD:Ai-Thinker_BW16 --output-dir ./output .
+
+    - name: Create a new tag
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git tag v1-d
+        git push origin v1-d
+
+    - name: Upload compiled firmware to GitHub Releases
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./output/*.bin
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
