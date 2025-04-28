@@ -16,24 +16,24 @@ jobs:
     - name: Setup Arduino CLI
       run: |
         curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | bash
-        echo "/home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin" >> $GITHUB_PATH
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli version
+        echo "$HOME/bin" >> $GITHUB_PATH
+        arduino-cli version
 
     - name: Add board manager URL for Ameba platform
       run: |
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli config init
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli config set board_manager.additional_urls https://github.com/ambiot/ambd_arduino/raw/master/Arduino_package/package_realtek.com_amebad_index.json
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli config dump
+        arduino-cli config init
+        arduino-cli config set board_manager.additional_urls https://github.com/ambiot/ambd_arduino/raw/master/Arduino_package/package_realtek.com_amebad_index.json
+        arduino-cli config dump
 
-    - name: Install board support for RTL8720DN
+    - name: Install AmebaD board support
       run: |
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli core update-index
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli core install realtek:AmebaD
+        arduino-cli core update-index
+        arduino-cli core install realtek:AmebaD
 
-    - name: Compile firmware
+    - name: Compile firmware and export binaries
       run: |
-        mkdir -p ./output
-        /home/runner/work/RTL8720dn-Deauther/RTL8720dn-Deauther/bin/arduino-cli compile --fqbn realtek:AmebaD:Ai-Thinker_BW16 --output-dir ./output .
+        mkdir -p ./build
+        arduino-cli compile --fqbn realtek:AmebaD:Ai-Thinker_BW16 --export-binaries --output-dir ./build .
 
     - name: Create a new tag
       run: |
@@ -45,6 +45,6 @@ jobs:
     - name: Upload compiled firmware to GitHub Releases
       uses: softprops/action-gh-release@v1
       with:
-        files: /output/v1.bin
+        files: ./build/*.bin
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
